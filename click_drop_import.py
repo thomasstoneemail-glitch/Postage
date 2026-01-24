@@ -49,6 +49,25 @@ DEFAULT_HEADERS = [
     "Phone number",
 ]
 
+SPLIT_HEADERS = [
+    "Order Reference",
+    "First Name",
+    "Last Name",
+    "Company Name",
+    "Address line 1",
+    "Address line 2",
+    "Address line 3",
+    "City",
+    "County",
+    "Postcode",
+    "Country",
+    "Weight",
+    "Format",
+    "Service Code",
+    "Email",
+    "Phone",
+]
+
 
 @dataclass
 class AddressRecord:
@@ -272,6 +291,8 @@ def build_xlsx(records: list[AddressRecord], output_path: Path, split_name: bool
     sheet = workbook.active
     sheet.title = "Orders"
 
+    headers = SPLIT_HEADERS if split_name else DEFAULT_HEADERS
+    sheet.append(headers)
     header_key = "split" if split_name else "full"
     sheet.append(DEFAULT_HEADERS[header_key])
     for record in records:
