@@ -33,7 +33,8 @@ COUNTRY_ALIASES = {"UK", "GB", "UNITED KINGDOM", "GREAT BRITAIN"}
 
 DEFAULT_HEADERS = [
     "Order Reference",
-    "Full Name",
+    "First Name",
+    "Last Name",
     "Company Name",
     "Address line 1",
     "Address line 2",
@@ -128,6 +129,16 @@ def detect_company(name_line: str) -> tuple[str, str]:
     if any(keyword in upper for keyword in COMPANY_KEYWORDS):
         return "", name_line
     return name_line, ""
+
+
+def split_full_name(full_name: str) -> tuple[str, str]:
+    """Split a full name into first and last components."""
+    tokens = [token for token in full_name.split(" ") if token]
+    if not tokens:
+        return "", ""
+    if len(tokens) == 1:
+        return tokens[0], ""
+    return tokens[0], " ".join(tokens[1:])
 
 
 def extract_contact_lines(lines: list[str]) -> tuple[list[str], str, str]:
@@ -264,25 +275,26 @@ def build_xlsx(records: list[AddressRecord], output_path: Path) -> None:
 
     sheet.append(DEFAULT_HEADERS)
     for record in records:
-        sheet.append(
-            [
-                record.order_reference,
-                record.full_name,
-                record.company_name,
-                record.address1,
-                record.address2,
-                record.address3,
-                record.city,
-                record.county,
-                record.postcode,
-                record.country,
-                record.weight,
-                record.parcel_format,
-                record.service_code,
-                record.email,
-                record.phone,
-            ]
-        )
+        first_name, last_name = split_full_name(record.full_name)
+        row = [
+            record.order_reference,
+            first_name,
+            last_name,
+            record.company_name,
+            record.address1,
+            record.address2,
+            record.address3,
+            record.city,
+            record.county,
+            record.postcode,
+            record.country,
+            record.weight,
+            record.parcel_format,
+            record.service_code,
+            record.email,
+            record.phone,
+        ]
+        sheet.append(row)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     workbook.save(output_path)
