@@ -296,44 +296,25 @@ def build_xlsx(records: list[AddressRecord], output_path: Path, split_name: bool
     header_key = "split" if split_name else "full"
     sheet.append(DEFAULT_HEADERS[header_key])
     for record in records:
-        if split_name:
-            first_name, last_name = split_full_name(record.full_name)
-            row = [
-                record.order_reference,
-                first_name,
-                last_name,
-                record.company_name,
-                record.address1,
-                record.address2,
-                record.address3,
-                record.city,
-                record.county,
-                record.postcode,
-                record.country,
-                record.weight,
-                record.parcel_format,
-                record.service_code,
-                record.email,
-                record.phone,
-            ]
-        else:
-            row = [
-                record.order_reference,
-                record.full_name,
-                record.company_name,
-                record.address1,
-                record.address2,
-                record.address3,
-                record.city,
-                record.county,
-                record.postcode,
-                record.country,
-                record.weight,
-                record.parcel_format,
-                record.service_code,
-                record.email,
-                record.phone,
-            ]
+        first_name, last_name = split_full_name(record.full_name)
+        row = [
+            record.order_reference,
+            first_name,
+            last_name,
+            record.company_name,
+            record.address1,
+            record.address2,
+            record.address3,
+            record.city,
+            record.county,
+            record.postcode,
+            record.country,
+            record.weight,
+            record.parcel_format,
+            record.service_code,
+            record.email,
+            record.phone,
+        ]
         sheet.append(row)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
