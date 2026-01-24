@@ -32,6 +32,24 @@ COMPANY_KEYWORDS = ("LTD", "LIMITED", "LLP", "INC", "INC.", "PLC", "COMPANY")
 COUNTRY_ALIASES = {"UK", "GB", "UNITED KINGDOM", "GREAT BRITAIN"}
 
 DEFAULT_HEADERS = [
+    "Order reference",
+    "Recipient name",
+    "Recipient company",
+    "Shipping address - Address line 1",
+    "Shipping address - Address line 2",
+    "Shipping address - Address line 3",
+    "Shipping address - City",
+    "Shipping address - County",
+    "Shipping address - Postcode",
+    "Shipping address - Country",
+    "Weight",
+    "Format",
+    "Service code",
+    "Email address",
+    "Phone number",
+]
+
+SPLIT_HEADERS = [
     "Order Reference",
     "First Name",
     "Last Name",
@@ -263,7 +281,7 @@ def generate_order_references(count: int) -> Iterator[str]:
         yield f"{date_prefix}{idx:03d}"
 
 
-def build_xlsx(records: list[AddressRecord], output_path: Path) -> None:
+def build_xlsx(records: list[AddressRecord], output_path: Path, split_name: bool) -> None:
     """Write records to an XLSX file."""
     if not importlib.util.find_spec("openpyxl"):
         raise ImportError("openpyxl")
@@ -273,7 +291,10 @@ def build_xlsx(records: list[AddressRecord], output_path: Path) -> None:
     sheet = workbook.active
     sheet.title = "Orders"
 
-    sheet.append(DEFAULT_HEADERS)
+    headers = SPLIT_HEADERS if split_name else DEFAULT_HEADERS
+    sheet.append(headers)
+    header_key = "split" if split_name else "full"
+    sheet.append(DEFAULT_HEADERS[header_key])
     for record in records:
         first_name, last_name = split_full_name(record.full_name)
         row = [
@@ -355,6 +376,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--save-rejects", action="store_true")
     parser.add_argument("--quiet", action="store_true")
     parser.add_argument("--debug", action="store_true")
+    parser.add_argument(
+        "--split-name",
+        action="store_true",
+        help="Export First Name/Last Name columns instead of Full Name.",
+    )
     parser.add_argument("--self-test", action="store_true")
     return parser.parse_args()
 
@@ -493,7 +519,7 @@ def main() -> int:
     output_path = (outdir / filename).resolve()
 
     try:
-        build_xlsx(records, output_path)
+        build_xlsx(records, output_path, args.split_name)
     except ImportError:
         print_status(
             console,

@@ -32,7 +32,8 @@ py click_drop_import.py \
   --service-code "" \
   --strict \
   --save-rejects \
-  --debug
+  --debug \
+  --split-name
 ```
 
 Run the built-in self-test (no files written):
@@ -46,3 +47,4 @@ py click_drop_import.py --self-test
 - The script does **not** copy files into the Click & Drop watch folder. You should copy the XLSX manually.
 - Input is read with UTF-8 (with BOM support) and errors are replaced to ensure compatibility with Windows terminals.
 - Logs are written to `.\logs\app.log` with rotation.
+- Use `--split-name` if your Click & Drop mapping expects separate first/last name fields.
