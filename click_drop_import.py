@@ -32,21 +32,21 @@ COMPANY_KEYWORDS = ("LTD", "LIMITED", "LLP", "INC", "INC.", "PLC", "COMPANY")
 COUNTRY_ALIASES = {"UK", "GB", "UNITED KINGDOM", "GREAT BRITAIN"}
 
 DEFAULT_HEADERS = [
-    "Order Reference",
-    "Full Name",
-    "Company Name",
-    "Address line 1",
-    "Address line 2",
-    "Address line 3",
-    "City",
-    "County",
-    "Postcode",
-    "Country",
+    "Order reference",
+    "Recipient name",
+    "Recipient company",
+    "Shipping address - Address line 1",
+    "Shipping address - Address line 2",
+    "Shipping address - Address line 3",
+    "Shipping address - City",
+    "Shipping address - County",
+    "Shipping address - Postcode",
+    "Shipping address - Country",
     "Weight",
     "Format",
-    "Service Code",
-    "Email",
-    "Phone",
+    "Service code",
+    "Email address",
+    "Phone number",
 ]
 
 SPLIT_HEADERS = [
@@ -293,6 +293,8 @@ def build_xlsx(records: list[AddressRecord], output_path: Path, split_name: bool
 
     headers = SPLIT_HEADERS if split_name else DEFAULT_HEADERS
     sheet.append(headers)
+    header_key = "split" if split_name else "full"
+    sheet.append(DEFAULT_HEADERS[header_key])
     for record in records:
         if split_name:
             first_name, last_name = split_full_name(record.full_name)
