@@ -31,23 +31,43 @@ PHONE_RE = re.compile(r"\+?\d[\d\s().-]{6,}\d")
 COMPANY_KEYWORDS = ("LTD", "LIMITED", "LLP", "INC", "INC.", "PLC", "COMPANY")
 COUNTRY_ALIASES = {"UK", "GB", "UNITED KINGDOM", "GREAT BRITAIN"}
 
-DEFAULT_HEADERS = [
-    "Order Reference",
-    "Full Name",
-    "Company Name",
-    "Address line 1",
-    "Address line 2",
-    "Address line 3",
-    "City",
-    "County",
-    "Postcode",
-    "Country",
-    "Weight",
-    "Format",
-    "Service Code",
-    "Email",
-    "Phone",
-]
+DEFAULT_HEADERS = {
+    "full": [
+        "Order Reference",
+        "Full Name",
+        "Company Name",
+        "Address line 1",
+        "Address line 2",
+        "Address line 3",
+        "City",
+        "County",
+        "Postcode",
+        "Country",
+        "Weight",
+        "Format",
+        "Service Code",
+        "Email",
+        "Phone",
+    ],
+    "split": [
+        "Order Reference",
+        "First Name",
+        "Last Name",
+        "Company Name",
+        "Address line 1",
+        "Address line 2",
+        "Address line 3",
+        "City",
+        "County",
+        "Postcode",
+        "Country",
+        "Weight",
+        "Format",
+        "Service Code",
+        "Email",
+        "Phone",
+    ],
+}
 
 
 @dataclass
@@ -128,6 +148,16 @@ def detect_company(name_line: str) -> tuple[str, str]:
     if any(keyword in upper for keyword in COMPANY_KEYWORDS):
         return "", name_line
     return name_line, ""
+
+
+def split_full_name(full_name: str) -> tuple[str, str]:
+    """Split a full name into first and last components."""
+    tokens = [token for token in full_name.split(" ") if token]
+    if not tokens:
+        return "", ""
+    if len(tokens) == 1:
+        return tokens[0], ""
+    return tokens[0], " ".join(tokens[1:])
 
 
 def extract_contact_lines(lines: list[str]) -> tuple[list[str], str, str]:
@@ -252,7 +282,7 @@ def generate_order_references(count: int) -> Iterator[str]:
         yield f"{date_prefix}{idx:03d}"
 
 
-def build_xlsx(records: list[AddressRecord], output_path: Path) -> None:
+def build_xlsx(records: list[AddressRecord], output_path: Path, split_name: bool) -> None:
     """Write records to an XLSX file."""
     if not importlib.util.find_spec("openpyxl"):
         raise ImportError("openpyxl")
@@ -262,10 +292,31 @@ def build_xlsx(records: list[AddressRecord], output_path: Path) -> None:
     sheet = workbook.active
     sheet.title = "Orders"
 
-    sheet.append(DEFAULT_HEADERS)
+    header_key = "split" if split_name else "full"
+    sheet.append(DEFAULT_HEADERS[header_key])
     for record in records:
-        sheet.append(
-            [
+        if split_name:
+            first_name, last_name = split_full_name(record.full_name)
+            row = [
+                record.order_reference,
+                first_name,
+                last_name,
+                record.company_name,
+                record.address1,
+                record.address2,
+                record.address3,
+                record.city,
+                record.county,
+                record.postcode,
+                record.country,
+                record.weight,
+                record.parcel_format,
+                record.service_code,
+                record.email,
+                record.phone,
+            ]
+        else:
+            row = [
                 record.order_reference,
                 record.full_name,
                 record.company_name,
@@ -282,7 +333,7 @@ def build_xlsx(records: list[AddressRecord], output_path: Path) -> None:
                 record.email,
                 record.phone,
             ]
-        )
+        sheet.append(row)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     workbook.save(output_path)
@@ -343,6 +394,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--save-rejects", action="store_true")
     parser.add_argument("--quiet", action="store_true")
     parser.add_argument("--debug", action="store_true")
+    parser.add_argument(
+        "--split-name",
+        action="store_true",
+        help="Export First Name/Last Name columns instead of Full Name.",
+    )
     parser.add_argument("--self-test", action="store_true")
     return parser.parse_args()
 
@@ -481,7 +537,7 @@ def main() -> int:
     output_path = (outdir / filename).resolve()
 
     try:
-        build_xlsx(records, output_path)
+        build_xlsx(records, output_path, args.split_name)
     except ImportError:
         print_status(
             console,
